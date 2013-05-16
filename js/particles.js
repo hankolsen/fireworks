@@ -11,7 +11,7 @@
 				window.webkitRequestAnimationFrame 	||
 				window.mozRequestAnimationFram		||
 				window.msRequestAnimationFrame		||
-				function(callback, element){
+				function(callback){
 					window.setTimeout(callback, 1000/60);
 				};
 	})();
@@ -32,7 +32,15 @@
 
 		this.xSpeed = 0;
 		this.ySpeed = 0;
-		this.context;
+
+    this.setFillStyle = function(){
+      var h = this.color[0],
+          s = this.color[1] + '%',
+          l = this.color[2] + '%',
+          a = this.color[3];
+
+      this.context.fillStyle = 'hsla(' + h + ',' + s + ',' + l + ',' + a + ')';
+    };
 
 		// abstract methods
 		this.draw = function(){};
@@ -44,11 +52,10 @@
    * @constructor
    */
 	function Ball() {
-
-    this.fillStyle = 'rgb(' + Math.floor(Math.random()*255) + ',' + Math.floor(Math.random()*255) + ',' + Math.floor(Math.random()*255) + ')';
-		this.xSpeed = 	Math.random() * 6 - 3;    // x speed is random between -3 and 3
-		this.ySpeed = 	Math.random() * - 5 - 15; // ySpeed is random  between -20 and -15
-		this.size 	= 	Math.random() * 10 + 10;  // size is random between 10 and 20
+      this.color  = [Math.floor(Math.random()*360), 100, Math.floor(Math.random()*10 + 50), 1];
+      this.xSpeed = Math.random() * 6 - 3;    // x speed is random between -3 and 3
+      this.ySpeed = Math.random() * - 5 - 15; // ySpeed is random  between -20 and -15
+      this.size   = Math.random() * 10 + 10;  // size is random between 10 and 20
 
     /**
      * Draw the ball on its canvas
@@ -56,7 +63,7 @@
 		this.draw = function(){
 
 			// set the fill colour
-			this.context.fillStyle = this.fillStyle; 
+			this.setFillStyle();
 			
 			// draw a circle
 			this.context.beginPath(); 
@@ -78,30 +85,42 @@
    * @constructor
    */
 	function Star() {
+      this.setFillStyle = function(){
+        var h = this.color[0],
+            s = this.color[1] + '%',
+            l = this.color[2] + '%',
+            a = this.color[3];
 
-		this.draw = function() {
-			var i = 0,
-          numOfEdges = 5,
-				  midAngle = .5;
+        this.context.fillStyle = 'hsla(' + h + ',' + s + ',' + l + ',' + a + ')';
+        this.color[1] *= .995;
+        this.color[2] *= .999;
 
-			this.context.save();
-      this.context.beginPath();
-      this.context.translate(this.x, this.y);
-      this.context.moveTo(0,0-this.size);
+      };
 
-      for (i = 0; i < numOfEdges; i++)
-      {
+      this.draw = function() {
+        var i = 0,
+            numOfEdges = 5,
+            midAngle = .5;
+
+        this.context.save();
+        this.context.beginPath();
+        this.context.translate(this.x, this.y);
+        this.context.moveTo(0,0-this.size);
+
+        for (i; i < numOfEdges; i++)
+        {
           this.context.rotate(Math.PI / numOfEdges);
           this.context.lineTo(0, 0 - (numOfEdges*midAngle));
           this.context.rotate(Math.PI / numOfEdges);
           this.context.lineTo(0, 0 - numOfEdges);
-      }
-      this.context.fillStyle = this.fillStyle;
-      this.context.fill();
-      this.context.restore();
+        }
 
-      this.move();
-		}
+        this.setFillStyle();
+        this.context.fill();
+        this.context.restore();
+
+        this.move();
+      }
 	}
 
 	Ball.prototype = new Drawable();
@@ -109,15 +128,15 @@
 
 
 	Ball.prototype.move = function(){
-		// add the speed to the position
-		this.x+=this.xSpeed;
-		this.y+=this.ySpeed;
+      // add the speed to the position
+      this.x+=this.xSpeed;
+      this.y+=this.ySpeed;
 
-		// make it shrink by 96%
-		this.size*=.96;	
+      // make it shrink by 96%
+      this.size*=.96;
 
-		// add gravity
-		this.ySpeed +=.4; 
+      // add gravity
+      this.ySpeed +=.4;
 	};
 
 
@@ -135,55 +154,55 @@
 
 
 	Ball.prototype.explode = function(){
-		var star,
-			  j = 0,
-			  numberOfStars = 8;
+      var star,
+          j = 0,
+          numberOfStars = 8;
 
-		for (j; j < numberOfStars; j++) {
+      for (j; j < numberOfStars; j++) {
 
-			star = new Star();
-			star.init(this.x, this.y);
-			star.xSpeed = Math.random() * 20 - 10;
-			star.ySpeed = Math.random() * 15 - 10;
-			star.size = Math.random()*5 + 10;
-			star.fillStyle = this.fillStyle;
-		
-			fireworks.stars.addStar(star);
-		}	
-		this.exploded = true;
+        star = new Star();
+        star.init(this.x, this.y);
+        star.xSpeed = Math.random() * 20 - 10;
+        star.ySpeed = Math.random() * 15 - 10;
+        star.size = Math.random()*5 + 10;
+        star.color = this.color;
+
+        fireworks.stars.addStar(star);
+      }
+      this.exploded = true;
 	};
 
 
 	function Balls() {
 		var self = this,
-			  balls = [],
-			  count = 0;
+            balls = [],
+            count = 0;
 
 		
 		return {
-			draw: function(){
-				var i = 0,
-					  ball,
-					  delay = Math.round(Math.random() * 50) + 30;
-				
-				if (count % delay === 0) {
-					ball = new Ball();
-					ball.init(self.canvasWidth / 2, self.canvasHeight / 4 * 3);
-					balls.push(ball);	
-				}
+          draw: function(){
+            var i = 0,
+                ball,
+                delay = Math.round(Math.random() * 50) + 30;
 
-				// clear the canvas
-				self.context.clearRect(0,0,self.canvasWidth, self.canvasHeight);
+            if (count % delay === 0) {
+              ball = new Ball();
+              ball.init(self.canvasWidth / 2, self.canvasHeight / 4 * 3);
+              balls.push(ball);
+            }
 
-				for (i ; i < balls.length; i++) {
-					balls[i].draw();
-					if (balls[i].y > self.canvasHeight) {
-						balls.splice(i,1);
-					}	
-				}
+            // clear the canvas
+            self.context.clearRect(0,0,self.canvasWidth, self.canvasHeight);
 
-				count++;
-			}
+            for (i ; i < balls.length; i++) {
+              balls[i].draw();
+              if (balls[i].y > self.canvasHeight) {
+                balls.splice(i,1);
+              }
+            }
+
+            count++;
+          }
 		}
 	}
 
@@ -191,29 +210,29 @@
 		var self = this,
         stars = [],
         fadeCanvas = function(){
-        self.context.fillStyle = 'rgba(0,0,0,0.1)';
+          self.context.fillStyle = 'rgba(0,0,0,0.1)';
           self.context.fillRect(0, 0, self.canvasWidth, self.canvasHeight);
-		    };
+        };
 
 		return {
-			draw: function(){
-				var i = 0;
+          draw: function(){
+            var i = 0;
 
-				fadeCanvas();
-				// clear the canvas
-				//self.context.clearRect(0,0,self.canvasWidth, self.canvasHeight);
+            fadeCanvas();
+            // clear the canvas
+            //self.context.clearRect(0,0,self.canvasWidth, self.canvasHeight);
 
-				for (i ; i < stars.length; i++) {
-					var star = stars[i];
-					star.draw();
-					if (star.y > self.canvasHeight) {
-						stars.splice(i,1);
-					}		
-				}
-			},
-			addStar: function(star) {
-				stars.push(star);
-			}
+            for (i ; i < stars.length; i++) {
+              var star = stars[i];
+              star.draw();
+              if (star.y > self.canvasHeight) {
+                  stars.splice(i,1);
+              }
+            }
+          },
+          addStar: function(star) {
+            stars.push(star);
+          }
 		}
 	}
 
@@ -257,47 +276,47 @@
 
         };
 
-		return {
+      return {
 
-      init : function() {
-				setUpCanvas();
-				Ball.prototype.context = particleContext;
-				
-				Balls.prototype.context = particleContext;
-				Balls.prototype.canvasWidth = particleCanvas.width;
-				Balls.prototype.canvasHeight = particleCanvas.height;
+        init : function() {
+          setUpCanvas();
+          Ball.prototype.context = particleContext;
 
-				Star.prototype.context = starContext;
+          Balls.prototype.context = particleContext;
+          Balls.prototype.canvasWidth = particleCanvas.width;
+          Balls.prototype.canvasHeight = particleCanvas.height;
 
-				Stars.prototype.context = starContext;
-				Stars.prototype.canvasWidth = starCanvas.width;
-				Stars.prototype.canvasHeight = starCanvas.height;
+          Star.prototype.context = starContext;
 
-				this.balls = new Balls();
-				this.stars = new Stars();
-				
-				return true;
-			},
+          Stars.prototype.context = starContext;
+          Stars.prototype.canvasWidth = starCanvas.width;
+          Stars.prototype.canvasHeight = starCanvas.height;
 
-      start : function() {
-				animate();
-			},
+          this.balls = new Balls();
+          this.stars = new Stars();
 
-			render: function() {
-				this.balls.draw();
-				this.stars.draw();
-			}
-		}
+          return true;
+        },
+
+        start : function() {
+          animate();
+        },
+
+        render: function() {
+          this.balls.draw();
+          this.stars.draw();
+        }
+      }
 	}
 
 	function animate() {
-		requestAnimationFrame(animate);
-		fireworks.render();
+      requestAnimationFrame(animate);
+      fireworks.render();
 	}
 
 	var fireworks = new Fireworks();
 
 	if (fireworks.init()) {
-		fireworks.start();
+      fireworks.start();
 	}
 })();
